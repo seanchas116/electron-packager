@@ -37,8 +37,12 @@ module.exports = {
       var frameworksPath = path.join(contentsPath, 'Frameworks')
       var appPlistFilename = path.join(contentsPath, 'Info.plist')
       var helperPlistFilename = path.join(frameworksPath, 'Electron Helper.app', 'Contents', 'Info.plist')
+      var helperEHPlistFilename = path.join(frameworksPath, 'Electron Helper EH.app', 'Contents', 'Info.plist')
+      var helperNPPlistFilename = path.join(frameworksPath, 'Electron Helper NP.app', 'Contents', 'Info.plist')
       var appPlist = plist.parse(fs.readFileSync(appPlistFilename).toString())
       var helperPlist = plist.parse(fs.readFileSync(helperPlistFilename).toString())
+      var helperEHPlist = plist.parse(fs.readFileSync(helperEHPlistFilename).toString())
+      var helperNPPlist = plist.parse(fs.readFileSync(helperNPPlistFilename).toString())
 
       // Update plist files
       var defaultBundleName = 'com.electron.' + opts.name.toLowerCase().replace(/ /g, '_')
@@ -49,8 +53,14 @@ module.exports = {
       appPlist.CFBundleDisplayName = opts.name
       appPlist.CFBundleIdentifier = opts['app-bundle-id'] || defaultBundleName
       appPlist.CFBundleName = opts.name
-      helperPlist.CFBundleIdentifier = opts['helper-bundle-id'] || defaultBundleName + '.helper'
-      helperPlist.CFBundleName = opts.name
+
+      var helperBundleID = opts['helper-bundle-id'] || defaultBundleName + '.helper'
+      helperPlist.CFBundleIdentifier = helperBundleID
+      helperPlist.CFBundleName = helperPlist.CFBundleDisplayName = helperPlist.CFBundleExecutable = opts.name + ' Helper'
+      helperEHPlist.CFBundleIdentifier = helperBundleID + '.EH'
+      helperEHPlist.CFBundleName = helperEHPlist.CFBundleDisplayName = helperEHPlist.CFBundleExecutable = opts.name + ' Helper EH'
+      helperNPPlist.CFBundleIdentifier = helperBundleID + '.NP'
+      helperNPPlist.CFBundleName = helperNPPlist.CFBundleDisplayName = helperNPPlist.CFBundleExecutable = opts.name + ' Helper NP'
 
       if (appVersion) {
         appPlist.CFBundleShortVersionString = appPlist.CFBundleVersion = appVersion
@@ -75,6 +85,8 @@ module.exports = {
 
       fs.writeFileSync(appPlistFilename, plist.build(appPlist))
       fs.writeFileSync(helperPlistFilename, plist.build(helperPlist))
+      fs.writeFileSync(helperEHPlistFilename, plist.build(helperEHPlist))
+      fs.writeFileSync(helperNPPlistFilename, plist.build(helperNPPlist))
 
       var operations = []
 
