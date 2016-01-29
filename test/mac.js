@@ -79,6 +79,67 @@ function createAppVersionTest (appVersion, buildVersion) {
   }
 }
 
+function createHelperInfoTest (helperBundleId) {
+  return function (t) {
+    t.timeoutAfter(config.timeout)
+
+    var opts = Object.create(baseOpts)
+    opts['helper-bundle-id'] = helperBundleId
+
+    var frameworksPath
+    var plistPath
+
+    waterfall([
+      function (cb) {
+        packager(opts, cb)
+      }, function (paths, cb) {
+        frameworksPath = path.join(paths[0], opts.name + '.app', 'Contents', 'Frameworks')
+        plistPath = path.join(frameworksPath, opts.name + ' Helper.app', 'Contents', 'Info.plist')
+        fs.stat(plistPath, cb)
+      }, function (stats, cb) {
+        t.true(stats.isFile(), 'The Helper Info.plist file should exist')
+        fs.readFile(plistPath, 'utf8', cb)
+      }, function (file, cb) {
+        var obj = plist.parse(file)
+        var helperName = opts.name + ' Helper'
+        t.equal(obj.CFBundleIdentifier, opts['helper-bundle-id'], 'Helper CFBundleIdentifier should reflect helper-bundle-id')
+        t.equal(obj.CFBundleName, helperName, 'Helper CFBundleName should reflect name')
+        t.equal(obj.CFBundleDisplayName, helperName, 'Helper CFBundleDisplayName should reflect name')
+        t.equal(obj.CFBundleExecutable, helperName, 'Helper CFBundleExecutable should reflect helper app name')
+
+        plistPath = path.join(frameworksPath, opts.name + ' Helper EH.app', 'Contents', 'Info.plist')
+        fs.stat(plistPath, cb)
+      }, function (stats, cb) {
+        t.true(stats.isFile(), 'The Helper EH Info.plist file should exist')
+        fs.readFile(plistPath, 'utf8', cb)
+      }, function (file, cb) {
+        var obj = plist.parse(file)
+        var helperName = opts.name + ' Helper EH'
+        t.equal(obj.CFBundleIdentifier, opts['helper-bundle-id'] + '.EH', 'Helper EH CFBundleIdentifier should reflect helper-bundle-id')
+        t.equal(obj.CFBundleName, helperName, 'Helper EH CFBundleName should reflect name')
+        t.equal(obj.CFBundleDisplayName, helperName, 'Helper EH CFBundleDisplayName should reflect name')
+        t.equal(obj.CFBundleExecutable, helperName, 'Helper EH CFBundleExecutable should reflect helper app name')
+
+        plistPath = path.join(frameworksPath, opts.name + ' Helper NP.app', 'Contents', 'Info.plist')
+        fs.stat(plistPath, cb)
+      }, function (stats, cb) {
+        t.true(stats.isFile(), 'The Helper NP Info.plist file should exist')
+        fs.readFile(plistPath, 'utf8', cb)
+      }, function (file, cb) {
+        var obj = plist.parse(file)
+        var helperName = opts.name + ' Helper NP'
+        t.equal(obj.CFBundleIdentifier, opts['helper-bundle-id'] + '.NP', 'Helper NP CFBundleIdentifier should reflect helper-bundle-id')
+        t.equal(obj.CFBundleName, helperName, 'Helper NP CFBundleName should reflect name')
+        t.equal(obj.CFBundleDisplayName, helperName, 'Helper NP CFBundleDisplayName should reflect name')
+        t.equal(obj.CFBundleExecutable, helperName, 'Helper NP CFBundleExecutable should reflect helper app name')
+        cb()
+      },
+    ], function (err) {
+      t.end(err)
+    })
+  }
+}
+
 function createAppCategoryTypeTest (appCategoryType) {
   return function (t) {
     t.timeoutAfter(config.timeout)
@@ -201,4 +262,8 @@ util.teardown()
 
 util.setup()
 test('app categoryType test', createAppCategoryTypeTest('public.app-category.developer-tools'))
+util.teardown()
+
+util.setup()
+test('helper info test', createHelperInfoTest('org.test.basic-test.helper'))
 util.teardown()
